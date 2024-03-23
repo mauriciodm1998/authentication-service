@@ -37,11 +37,16 @@ func (u *login) Start() error {
 	router.Use(middlewares.Logger)
 
 	mainGroup := router.Group("/api")
+	mainGroup.GET("/healthz", u.healthCheck)
 
 	authGroup := mainGroup.Group("/user")
 	u.RegisterGroup(authGroup)
 
 	return router.Start(":" + config.Get().Server.Port)
+}
+
+func (r *login) healthCheck(c echo.Context) error {
+	return c.NoContent(http.StatusOK)
 }
 
 func (u *login) Login(c echo.Context) error {
