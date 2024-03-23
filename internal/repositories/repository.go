@@ -4,18 +4,16 @@ import (
 	"authentication-service/internal/canonical"
 	"authentication-service/internal/config"
 	"context"
+	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go/aws"
 
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	collection = "users"
-	database   = "default"
 )
 
 type Repository interface {
@@ -23,45 +21,82 @@ type Repository interface {
 	CreateUser(context.Context, canonical.User) error
 }
 
+const (
+	tableName         = "users"
+	indexRegistration = ""
+	indexUserName     = ""
+)
+
 type repository struct {
-	collection *mongo.Collection
+	database  *dynamodb.Client
+	tableName string
 }
 
 func New() Repository {
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(config.Get().Database.ConnectionString))
+	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(config.Get().AWS.AccessKeyId, config.Get().AWS.SecretAccessKey, config.Get().AWS.SessionToken)), awsconfig.WithRegion(config.Get().AWS.Region),
+	)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error when connect to the database")
+		log.Fatal().Err(err).Msg("an error occurred when connect to the database")
 	}
-
 	return &repository{
-		collection: client.Database(database).Collection(collection),
+		database:  dynamodb.NewFromConfig(cfg),
+		tableName: tableName,
 	}
 }
 
 func (r *repository) CreateUser(ctx context.Context, user canonical.User) error {
-	_, err := r.collection.InsertOne(ctx, user)
+	av, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
 	}
+
+	_, err = r.database.PutItem(ctx, &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: &r.tableName,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *repository) GetUser(ctx context.Context, login canonical.Login) (*canonical.User, error) {
-	var statement primitive.D
+	var queryItem, index, valueToFind string
 
 	if login.Registration != "" {
-		statement = bson.D{{Key: "registration", Value: login.Registration}}
+		queryItem = "registration"
+		index = ""
+		valueToFind = login.Registration
 	}
 
 	if login.UserName != "" {
-		statement = bson.D{{Key: "username", Value: login.UserName}}
+		queryItem = "user_name"
+		index = ""
+		valueToFind = login.UserName
+	}
+
+	result, err := r.database.Query(context.TODO(), &dynamodb.QueryInput{
+		TableName:              aws.String(r.tableName),
+		IndexName:              aws.String(index),
+		KeyConditionExpression: aws.String(fmt.Sprintf("#%s = :%s", queryItem, queryItem)),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			fmt.Sprintf(":%s", queryItem): &types.AttributeValueMemberS{Value: valueToFind},
+		},
+		ExpressionAttributeNames: map[string]string{
+			fmt.Sprintf("#%s", queryItem): queryItem,
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	var user canonical.User
-
-	err := r.collection.FindOne(ctx, statement).Decode(&user)
-	if err != nil {
-		return nil, err
+	for _, item := range result.Items {
+		if err := attributevalue.UnmarshalMap(item, &user); err != nil {
+			return nil, err
+		}
 	}
 
 	return &user, nil

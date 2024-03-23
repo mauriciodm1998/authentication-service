@@ -1,6 +1,4 @@
 server:
   port: 3010
 token:
-  key: "dnVJWGFPSzRPcEpXQTl5U1gxVVRwSVdzaFhQcFA2bmVHS0dBNzI0RmF1WQ=="
-database:
-  connection_string: mongodb://root:password@0.0.0.0:27017/
+  key: "uk5RAK5cumPZZ3jIuKGMn019wXYz4kad"

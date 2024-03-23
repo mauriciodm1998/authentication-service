@@ -18,9 +18,12 @@ type config struct {
 	Server struct {
 		Port string `cfg:"port"`
 	} `cfg:"server"`
-	Database struct {
-		ConnectionString string `cfg:"connection_string"`
-	} `cfg:"database"`
+	AWS struct {
+		Region          string `cfg:"region"`
+		AccessKeyId     string `cfg:"access_key_id"`
+		SecretAccessKey string `cfg:"secret_access_key"`
+		SessionToken    string `cfg:"session_token"`
+	}
 }
 
 func ParseFromFlags() {
