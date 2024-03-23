@@ -23,8 +23,8 @@ type Repository interface {
 
 const (
 	tableName         = "users"
-	indexRegistration = ""
-	indexUserName     = ""
+	indexRegistration = "registration-index"
+	indexUserName     = "user_name-index"
 )
 
 type repository struct {
@@ -67,13 +67,13 @@ func (r *repository) GetUser(ctx context.Context, login canonical.Login) (*canon
 
 	if login.Registration != "" {
 		queryItem = "registration"
-		index = ""
+		index = indexRegistration
 		valueToFind = login.Registration
 	}
 
 	if login.UserName != "" {
 		queryItem = "user_name"
-		index = ""
+		index = indexUserName
 		valueToFind = login.UserName
 	}
 
