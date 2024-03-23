@@ -58,10 +58,10 @@ func (u *loginService) CreateUser(ctx context.Context, user canonical.User) erro
 	}
 
 	user.Password = string(passEncrypted)
-	user.Id = uuid.New().String()
+	user.Id = int(uuid.New().ID())
 	err = u.Repository.CreateUser(ctx, user)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func GenerateToken(userId string, email string) (string, error) {
+func GenerateToken(userId int, email string) (string, error) {
 	permissions := jwt.MapClaims{}
 
 	permissions["authorized"] = true

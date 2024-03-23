@@ -1,0 +1,41 @@
+name: ci_workflow
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.x'
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Tests & Build & Push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: docker.io/mauricio1998/authentication-service
+          context: .
+          file: ./build/Dockerfile
+  deploy:
+      name: Deploy
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+      - name: Apply manifest
+        uses: notnull-co/kubectl-action@master
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          KUBE_CONFIG: ${{ secrets.KUBECONFIG }}
+        with:
+          args: kubectl rollout restart deployment authentication-service-deployment -n hackaton

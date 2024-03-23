@@ -7,7 +7,7 @@ type Login struct {
 }
 
 type User struct {
-	Id           string `dynamodbav:"id"`
+	Id           int    `dynamodbav:"id"`
 	UserName     string `dynamodbav:"user_name"`
 	Registration string `dynamodbav:"registration"`
 	Email        string `dynamodbav:"email"`

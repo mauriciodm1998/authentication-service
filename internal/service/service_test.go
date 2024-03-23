@@ -54,7 +54,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	user := canonical.User{
-		Id:       "123123",
+		Id:       12321321,
 		UserName: "fulano",
 		Password: "$2a$10$GjN8aPVbp5u/jFZFwmgda.XpLnj7oqb6hPsN1v57JhbCIqN/M.04O",
 	}
@@ -75,7 +75,7 @@ func TestLoginGetUserError(t *testing.T) {
 	}
 
 	user := canonical.User{
-		Id:       "123123",
+		Id:       12312321,
 		UserName: "fulano",
 		Password: "$2a$10$GjN8aPVbp5u/jFZFwmgda.XpLnj7oqb6hPsN1v57JhbCIqN/M.04O",
 	}
@@ -94,7 +94,7 @@ func TestLoginCheckPasswordError(t *testing.T) {
 	}
 
 	user := canonical.User{
-		Id:       "123123",
+		Id:       12312321,
 		UserName: "fulano",
 		Password: "$2a$10$GjN8aPVbp5u/jFZFwmg/M.04O",
 	}
